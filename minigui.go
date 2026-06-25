@@ -90,6 +90,7 @@ type Input struct {
 	Chars          []rune
 	Backspace      bool
 	Left, Right    bool
+	Up, Down       bool
 	Home, End      bool
 	Enter          bool
 	Shift          bool // shift held, to extend the selection with Left/Right/Home/End
@@ -126,7 +127,8 @@ type Context struct {
 	caret        int
 	selAnchor    int            // other end of the selection; == caret means no selection
 	clickedField bool           // a field captured the click this frame
-	scroll       map[ID]float64 // persisted scroll position per list, in rows
+	scroll       map[ID]float64 // persisted horizontal scroll per field/list
+	vscroll      map[ID]float64 // persisted vertical scroll per text area, in lines
 
 	// Geometry of the last widget, so SameLine can place the next one beside it.
 	lastX, lastY, lastW float64
@@ -441,6 +443,8 @@ func InputFromEbiten() Input {
 		Backspace:    repeatKey(ebiten.KeyBackspace),
 		Left:         repeatKey(ebiten.KeyArrowLeft),
 		Right:        repeatKey(ebiten.KeyArrowRight),
+		Up:           repeatKey(ebiten.KeyArrowUp),
+		Down:         repeatKey(ebiten.KeyArrowDown),
 		Home:         inpututil.IsKeyJustPressed(ebiten.KeyHome),
 		End:          inpututil.IsKeyJustPressed(ebiten.KeyEnd),
 		Enter:        inpututil.IsKeyJustPressed(ebiten.KeyEnter),
