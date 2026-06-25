@@ -5,8 +5,8 @@ meant to be shared across small Ebiten programs that need basic user input
 without pulling in a heavy widget framework. Its only dependency is Ebitengine
 itself; everything else is the Go standard library.
 
-> Status: early. Text rendering is pluggable (see [Fonts](#fonts)); per-app
-> color theming is still planned — the color scheme is currently fixed.
+> Status: early but usable — pluggable text faces (see [Fonts](#fonts)) and
+> per-app styling (see [Theming](#theming)).
 
 ## Model
 
@@ -76,6 +76,24 @@ if face, err := minigui.SystemFace(16); err == nil {
 
 To bundle your own font instead, build a face from embedded bytes with
 `text.NewGoTextFaceSource` and pass it to `SetFace`.
+
+## Theming
+
+Colors and layout metrics live in a `Style`. A zero-value `Context` uses
+`DefaultStyle` (a dark, cyan-tinted scheme); override what you want and apply it
+with `SetStyle`:
+
+```go
+s := minigui.DefaultStyle()
+s.Button = color.RGBA{0x20, 0x14, 0x28, 0xff}
+s.Focus = color.RGBA{0xff, 0x99, 0x33, 0xff}
+s.RowH = 28
+s.Face = face // optional; same as SetFace
+gui.SetStyle(s)
+```
+
+`SetFace` is a shortcut that sets only `Style.Face`; `Style()` returns the
+current style for reading or tweaking a single field.
 
 ## Install
 

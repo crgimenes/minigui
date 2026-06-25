@@ -34,7 +34,7 @@ func (c *Context) list(id ID, items []string, selected *int, iconPx float64) (ch
 	visible := max(min(len(items), listRows),
 		// keep a minimal box even when the list is empty
 		1)
-	w := float64(fieldW)
+	w := c.style.FieldW
 	rh := c.rowHeight()
 	if iconPx+2 > rh {
 		rh = iconPx + 2 // grow the row so a tall icon still fits
@@ -55,14 +55,14 @@ func (c *Context) list(id ID, items []string, selected *int, iconPx float64) (ch
 	c.setScroll(id, pos)
 	off := int(pos)
 
-	c.fill(c.x, c.y, w, h, colField)
+	c.fill(c.x, c.y, w, h, c.style.Field)
 
-	textX := c.x + pad
+	textX := c.x + c.style.Pad
 	if iconPx > 0 {
-		textX = c.x + pad + iconPx + pad
+		textX = c.x + c.style.Pad + iconPx + c.style.Pad
 	}
 
-	for i := 0; i < visible; i++ {
+	for i := range visible {
 		idx := off + i
 		if idx >= len(items) {
 			break
@@ -71,9 +71,9 @@ func (c *Context) list(id ID, items []string, selected *int, iconPx float64) (ch
 		itemHot := within(c.in.MouseX, c.in.MouseY, c.x, ry, w, rh)
 		switch {
 		case idx == *selected:
-			c.fill(c.x, ry, w, rh, colBtnHot)
+			c.fill(c.x, ry, w, rh, c.style.ButtonHot)
 		case itemHot:
-			c.fill(c.x, ry, w, rh, colBtn)
+			c.fill(c.x, ry, w, rh, c.style.Button)
 		}
 		if itemHot && c.in.MouseClicked {
 			clicked = idx
@@ -83,11 +83,11 @@ func (c *Context) list(id ID, items []string, selected *int, iconPx float64) (ch
 			}
 		}
 		if iconPx > 0 {
-			icons = append(icons, IconSlot{Index: idx, X: c.x + pad, Y: ry + (rh-iconPx)/2, Size: iconPx})
+			icons = append(icons, IconSlot{Index: idx, X: c.x + c.style.Pad, Y: ry + (rh-iconPx)/2, Size: iconPx})
 		}
-		c.textAt(textX, ry+(rh-c.fontH())/2, items[idx], colText)
+		c.textAt(textX, ry+(rh-c.fontH())/2, items[idx], c.style.Text)
 	}
-	c.border(c.x, c.y, w, h, colBorder)
+	c.border(c.x, c.y, w, h, c.style.Border)
 
 	// Scroll thumb on the right edge when the list overflows.
 	if len(items) > listRows {
@@ -99,7 +99,7 @@ func (c *Context) list(id ID, items []string, selected *int, iconPx float64) (ch
 		if maxOff > 0 {
 			thumbY = c.y + (h-thumbH)*pos/float64(maxOff)
 		}
-		c.fill(c.x+w-3, thumbY, 3, thumbH, colBorder)
+		c.fill(c.x+w-3, thumbY, 3, thumbH, c.style.Border)
 	}
 
 	c.advance(w, h)

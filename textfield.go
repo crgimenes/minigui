@@ -44,7 +44,7 @@ func editText(s string, caret int, in Input) (string, int) {
 // the text changed this frame. Clicking it gives it focus; it edits only while
 // focused.
 func (c *Context) TextField(id ID, s *string) bool {
-	w, h := float64(fieldW), c.rowHeight()
+	w, h := c.style.FieldW, c.rowHeight()
 	hot := within(c.in.MouseX, c.in.MouseY, c.x, c.y, w, h)
 	if hot && c.in.MouseClicked {
 		c.focus = id
@@ -67,7 +67,7 @@ func (c *Context) TextField(id ID, s *string) bool {
 	// inside the box (a single-line field never limits how much you can type). The
 	// glyphs are clipped to the box so nothing spills past the border. The caret
 	// position is the width of the text before it, so it tracks proportional fonts.
-	inner := w - 2*pad
+	inner := w - 2*c.style.Pad
 	textW := c.textWidth(*s)
 	xoff := c.scroll[id]
 	caretPx := 0.0
@@ -92,18 +92,18 @@ func (c *Context) TextField(id ID, s *string) bool {
 	}
 	c.setScroll(id, xoff)
 
-	border := colBorder
+	border := c.style.Border
 	if focused {
-		border = colFocus
+		border = c.style.Focus
 	}
-	c.fill(c.x, c.y, w, h, colField)
+	c.fill(c.x, c.y, w, h, c.style.Field)
 	c.border(c.x, c.y, w, h, border)
 
 	clip := image.Rect(int(c.x)+1, int(c.y)+1, int(c.x+w)-1, int(c.y+h)-1)
-	c.textClip(c.x+pad-xoff, c.y+(h-c.fontH())/2, *s, colText, clip)
+	c.textClip(c.x+c.style.Pad-xoff, c.y+(h-c.fontH())/2, *s, c.style.Text, clip)
 	if focused {
-		caretX := c.x + pad + caretPx - xoff
-		c.fill(caretX, c.y+3, 1, h-6, colFocus)
+		caretX := c.x + c.style.Pad + caretPx - xoff
+		c.fill(caretX, c.y+3, 1, h-6, c.style.Focus)
 	}
 
 	c.advance(w, h)

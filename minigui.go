@@ -27,6 +27,9 @@ type Face = text.Face
 
 // Layout metrics in logical pixels. The v1 toolkit uses Ebitengine's built-in
 // debug font, a fixed 6x16 cell, so text and carets are sized from that.
+// Default metrics in logical pixels. charW/charH are the built-in debug font's
+// fixed cell, used only when no face is set; the rest seed DefaultStyle and can
+// be overridden per Context through a Style.
 const (
 	charW  = 6
 	charH  = 16
@@ -36,15 +39,44 @@ const (
 	fieldW = 200
 )
 
-var (
-	colText   = color.RGBA{0xc8, 0xf0, 0xff, 0xff}
-	colBorder = color.RGBA{0x40, 0x80, 0x90, 0xff}
-	colBtn    = color.RGBA{0x12, 0x20, 0x2a, 0xff}
-	colBtnHot = color.RGBA{0x1e, 0x38, 0x44, 0xff}
-	colBtnOn  = color.RGBA{0x1e, 0x44, 0x52, 0xff} // active toggle background
-	colField  = color.RGBA{0x06, 0x0c, 0x12, 0xff}
-	colFocus  = color.RGBA{0x80, 0xff, 0xff, 0xff}
-)
+// Style holds the look of a Context: the text face, the widget colors and the
+// layout metrics. Start from DefaultStyle, override the fields you want, then
+// apply it with (*Context).SetStyle, so a host application can give the toolkit
+// its own palette and sizing.
+type Style struct {
+	Face Face // text face; nil uses the built-in debug font
+
+	Text      color.RGBA // label and field text
+	Border    color.RGBA // widget outline
+	Button    color.RGBA // button/toggle background
+	ButtonHot color.RGBA // hovered button background
+	ButtonOn  color.RGBA // active toggle background
+	Field     color.RGBA // text field and list background
+	Focus     color.RGBA // focused outline, caret and selection accent
+
+	RowH   float64 // height of a standard widget row
+	Pad    float64 // inner padding
+	Gap    float64 // gap between adjacent widgets
+	FieldW float64 // width of text fields and lists
+}
+
+// DefaultStyle returns the toolkit's built-in look: a dark, cyan-tinted scheme
+// with the v1 metrics. A zero-value Context uses it until SetStyle is called.
+func DefaultStyle() Style {
+	return Style{
+		Text:      color.RGBA{0xc8, 0xf0, 0xff, 0xff},
+		Border:    color.RGBA{0x40, 0x80, 0x90, 0xff},
+		Button:    color.RGBA{0x12, 0x20, 0x2a, 0xff},
+		ButtonHot: color.RGBA{0x1e, 0x38, 0x44, 0xff},
+		ButtonOn:  color.RGBA{0x1e, 0x44, 0x52, 0xff},
+		Field:     color.RGBA{0x06, 0x0c, 0x12, 0xff},
+		Focus:     color.RGBA{0x80, 0xff, 0xff, 0xff},
+		RowH:      rowH,
+		Pad:       pad,
+		Gap:       gap,
+		FieldW:    fieldW,
+	}
+}
 
 // Input is the per-frame input snapshot. It is plain data so the toolkit can be
 // driven from tests; InputFromEbiten builds it from the live ebiten state.
@@ -93,11 +125,13 @@ type Context struct {
 
 	itemW float64 // fixed width for buttons/toggles (0 = size to text)
 
-	face Face // text face for labels and fields; nil uses the debug font
+	style    Style // colors, metrics and face; defaults to DefaultStyle
+	styleSet bool  // whether style has been initialized
 }
 
 // Begin starts a frame, laying widgets out from the given top-left position.
 func (c *Context) Begin(in Input, x, y float64) {
+	c.ensureStyle()
 	c.in = in
 	c.x0, c.y0 = x, y
 	c.x, c.y = x, y
@@ -112,12 +146,36 @@ func (c *Context) SetItemWidth(w float64) {
 	c.itemW = w
 }
 
-// SetFace sets the text face used to measure and draw widget labels. Pass nil to
-// fall back to Ebitengine's built-in debug font (a fixed 6x16 cell, ASCII only).
-// A real face also lets non-Latin text (e.g. Japanese) render. Set it once on the
-// Context, e.g. before the first Begin; it persists across frames.
+// SetStyle sets the colors, metrics and face used to draw widgets. Start from
+// DefaultStyle and override what you need. It persists across frames.
+func (c *Context) SetStyle(s Style) {
+	c.style = s
+	c.styleSet = true
+}
+
+// Style returns the Context's current style, initializing it to DefaultStyle if
+// it has not been set, so callers can read or tweak individual fields.
+func (c *Context) Style() Style {
+	c.ensureStyle()
+	return c.style
+}
+
+// SetFace sets the text face used to measure and draw widget labels, leaving the
+// rest of the style untouched. Pass nil to fall back to Ebitengine's built-in
+// debug font (a fixed 6x16 cell, ASCII only). A real face also lets non-Latin
+// text (e.g. Japanese) render. It persists across frames.
 func (c *Context) SetFace(f Face) {
-	c.face = f
+	c.ensureStyle()
+	c.style.Face = f
+}
+
+// ensureStyle initializes the style to DefaultStyle the first time it is needed,
+// so a zero-value Context works without an explicit SetStyle.
+func (c *Context) ensureStyle() {
+	if !c.styleSet {
+		c.style = DefaultStyle()
+		c.styleSet = true
+	}
 }
 
 // End finishes the frame, clearing focus when the click missed every field.
@@ -141,29 +199,29 @@ func (c *Context) ClearFocus() {
 // SameLine places the next widget to the right of the one just drawn, on the
 // same row, instead of on a new line below it.
 func (c *Context) SameLine() {
-	c.x = c.lastX + c.lastW + gap
+	c.x = c.lastX + c.lastW + c.style.Gap
 	c.y = c.lastY
 }
 
 // Label draws a line of static text.
 func (c *Context) Label(s string) {
 	rh := c.rowHeight()
-	c.textAt(c.x, c.y+(rh-c.fontH())/2, s, colText)
+	c.textAt(c.x, c.y+(rh-c.fontH())/2, s, c.style.Text)
 	c.advance(c.textWidth(s), rh)
 }
 
 // Button draws a clickable button and reports whether it was clicked this frame.
 func (c *Context) Button(id ID, label string) bool {
-	return c.button(label, colBtn, colBorder)
+	return c.button(label, c.style.Button, c.style.Border)
 }
 
 // Toggle is a button that shows an active state, used for tools and on/off
 // options; it reports whether it was clicked this frame.
 func (c *Context) Toggle(id ID, label string, on bool) bool {
 	if on {
-		return c.button(label, colBtnOn, colFocus)
+		return c.button(label, c.style.ButtonOn, c.style.Focus)
 	}
-	return c.button(label, colBtn, colBorder)
+	return c.button(label, c.style.Button, c.style.Border)
 }
 
 // swatchSize is the side of a color swatch in logical pixels.
@@ -176,12 +234,12 @@ func (c *Context) Swatch(id ID, col color.RGBA, selected bool) bool {
 	hot := within(c.in.MouseX, c.in.MouseY, c.x, c.y, w, h)
 
 	c.fill(c.x, c.y, w, h, col)
-	border := colBorder
+	border := c.style.Border
 	switch {
 	case selected:
-		border = colFocus
+		border = c.style.Focus
 	case hot:
-		border = colText
+		border = c.style.Text
 	}
 	c.border(c.x, c.y, w, h, border)
 
@@ -195,18 +253,18 @@ func (c *Context) Swatch(id ID, col color.RGBA, selected bool) bool {
 // unless a fixed item width is set (SetItemWidth). Shared core of Button/Toggle.
 func (c *Context) button(label string, fill, border color.RGBA) bool {
 	textW := c.textWidth(label)
-	w := textW + 2*pad
+	w := textW + 2*c.style.Pad
 	if c.itemW > w {
 		w = c.itemW
 	}
 	h := c.rowHeight()
 	hot := within(c.in.MouseX, c.in.MouseY, c.x, c.y, w, h)
 	if hot {
-		fill = colBtnHot
+		fill = c.style.ButtonHot
 	}
 	c.fill(c.x, c.y, w, h, fill)
 	c.border(c.x, c.y, w, h, border)
-	c.textAt(c.x+(w-textW)/2, c.y+(h-c.fontH())/2, label, colText)
+	c.textAt(c.x+(w-textW)/2, c.y+(h-c.fontH())/2, label, c.style.Text)
 
 	clicked := hot && c.in.MouseClicked
 	c.advance(w, h)
@@ -240,44 +298,44 @@ func (c *Context) drawText(dst *ebiten.Image, cmd *drawCmd) {
 		}
 		target = dst.SubImage(clip).(*ebiten.Image)
 	}
-	if c.face == nil {
+	if c.style.Face == nil {
 		ebitenutil.DebugPrintAt(target, cmd.s, int(cmd.x), int(cmd.y))
 		return
 	}
 	op := &text.DrawOptions{}
 	op.GeoM.Translate(cmd.x, cmd.y)
 	op.ColorScale.ScaleWithColor(cmd.col)
-	text.Draw(target, cmd.s, c.face, op)
+	text.Draw(target, cmd.s, c.style.Face, op)
 }
 
 // textWidth returns the rendered width of s in logical pixels under the current
 // face, or the fixed-cell width when no face is set.
 func (c *Context) textWidth(s string) float64 {
-	if c.face == nil {
+	if c.style.Face == nil {
 		return float64(len([]rune(s))) * charW
 	}
-	return text.Advance(s, c.face)
+	return text.Advance(s, c.style.Face)
 }
 
 // fontH returns the text height used to vertically center labels: the face's line
 // height when set, or the fixed debug-font cell height otherwise.
 func (c *Context) fontH() float64 {
-	if c.face == nil {
+	if c.style.Face == nil {
 		return charH
 	}
-	m := c.face.Metrics()
+	m := c.style.Face.Metrics()
 	return m.HAscent + m.HDescent
 }
 
-// rowHeight is the height of a standard widget row. Without a face it stays at the
-// v1 metric; with one it grows to fit the font's line height.
+// rowHeight is the height of a standard widget row. Without a face it is the
+// style's RowH; with one it grows to fit the font's line height.
 func (c *Context) rowHeight() float64 {
-	if c.face == nil {
-		return rowH
+	if c.style.Face == nil {
+		return c.style.RowH
 	}
-	h := c.fontH() + 2*pad
-	if h < rowH {
-		h = rowH
+	h := c.fontH() + 2*c.style.Pad
+	if h < c.style.RowH {
+		h = c.style.RowH
 	}
 	return h
 }
@@ -294,7 +352,7 @@ func (c *Context) advance(w, h float64) {
 // newlineH advances the layout cursor to the next row, leaving room for a widget
 // of the given height.
 func (c *Context) newlineH(h float64) {
-	c.y += h + gap
+	c.y += h + c.style.Gap
 	c.x = c.x0
 }
 
