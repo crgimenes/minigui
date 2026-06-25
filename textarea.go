@@ -1,10 +1,6 @@
 package minigui
 
-import (
-	"image"
-
-	"github.com/crgimenes/native/clipboard"
-)
+import "image"
 
 // lineStart returns the index of the first rune of the line containing pos (the
 // rune just after the previous newline, or 0).
@@ -244,30 +240,7 @@ func (c *Context) TextArea(id ID, s *string, rows int) bool {
 	focused := c.focus == id
 	changed := false
 	if focused {
-		before := *s
-		ns, nc, na := editTextArea(*s, c.caret, c.selAnchor, c.in)
-
-		if c.in.Copy || c.in.Cut {
-			if lo, hi := selRange(nc, na); lo != hi {
-				sel := string([]rune(ns)[lo:hi])
-				_ = clipboard.WriteText(sel)
-				if c.in.Cut {
-					ns, nc, na = insertRunes(ns, nc, na, nil)
-				}
-			}
-		}
-		if c.in.Paste {
-			if txt, err := clipboard.ReadText(); err == nil {
-				if ins := multilineRunes(txt); len(ins) > 0 {
-					ns, nc, na = insertRunes(ns, nc, na, ins)
-				}
-			}
-		}
-
-		*s = ns
-		c.caret = nc
-		c.selAnchor = na
-		changed = ns != before
+		changed = c.editFocused(id, s, editTextArea, multilineRunes)
 
 		// Recompute the line layout if the text changed under us.
 		runes = []rune(*s)

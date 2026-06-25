@@ -3,8 +3,6 @@ package minigui
 import (
 	"image"
 	"unicode"
-
-	"github.com/crgimenes/native/clipboard"
 )
 
 // doubleClickFrames is how many frames apart two clicks on the same field still
@@ -216,30 +214,7 @@ func (c *Context) TextField(id ID, s *string) bool {
 	focused := c.focus == id
 	changed := false
 	if focused {
-		before := *s
-		ns, nc, na := editText(*s, c.caret, c.selAnchor, c.in)
-
-		if c.in.Copy || c.in.Cut {
-			if lo, hi := selRange(nc, na); lo != hi {
-				sel := string([]rune(ns)[lo:hi])
-				_ = clipboard.WriteText(sel)
-				if c.in.Cut {
-					ns, nc, na = insertRunes(ns, nc, na, nil)
-				}
-			}
-		}
-		if c.in.Paste {
-			if txt, err := clipboard.ReadText(); err == nil {
-				if ins := inlineRunes(txt); len(ins) > 0 {
-					ns, nc, na = insertRunes(ns, nc, na, ins)
-				}
-			}
-		}
-
-		*s = ns
-		c.caret = nc
-		c.selAnchor = na
-		changed = ns != before
+		changed = c.editFocused(id, s, editText, inlineRunes)
 	}
 
 	// Horizontal scroll: slide the view so the caret stays inside the box. The

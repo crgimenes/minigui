@@ -25,8 +25,6 @@ type ID string
 // falls back to Ebitengine's built-in debug font.
 type Face = text.Face
 
-// Layout metrics in logical pixels. The v1 toolkit uses Ebitengine's built-in
-// debug font, a fixed 6x16 cell, so text and carets are sized from that.
 // Default metrics in logical pixels. charW/charH are the built-in debug font's
 // fixed cell, used only when no face is set; the rest seed DefaultStyle and can
 // be overridden per Context through a Style.
@@ -98,6 +96,7 @@ type Input struct {
 	Cut            bool // Ctrl/Cmd+X this frame
 	Paste          bool // Ctrl/Cmd+V this frame
 	SelectAll      bool // Ctrl/Cmd+A this frame
+	Undo           bool // Ctrl/Cmd+Z this frame
 }
 
 type cmdKind int
@@ -125,10 +124,12 @@ type Context struct {
 	cmds         []drawCmd
 	focus        ID
 	caret        int
-	selAnchor    int            // other end of the selection; == caret means no selection
-	clickedField bool           // a field captured the click this frame
-	scroll       map[ID]float64 // persisted horizontal scroll per field/list
-	vscroll      map[ID]float64 // persisted vertical scroll per text area, in lines
+	selAnchor    int               // other end of the selection; == caret means no selection
+	clickedField bool              // a field captured the click this frame
+	scroll       map[ID]float64    // persisted horizontal scroll per field/list
+	vscroll      map[ID]float64    // persisted vertical scroll per text area, in lines
+	undo         map[ID][]undoSnap // per-field undo history (pre-edit snapshots)
+	undoCoalesce ID                // field whose run of typing is being coalesced
 
 	// Geometry of the last widget, so SameLine can place the next one beside it.
 	lastX, lastY, lastW float64
@@ -462,6 +463,7 @@ func InputFromEbiten() Input {
 		in.Cut = inpututil.IsKeyJustPressed(ebiten.KeyX)
 		in.Paste = inpututil.IsKeyJustPressed(ebiten.KeyV)
 		in.SelectAll = inpututil.IsKeyJustPressed(ebiten.KeyA)
+		in.Undo = !in.Shift && inpututil.IsKeyJustPressed(ebiten.KeyZ) // leave Shift+Z for redo
 	}
 	return in
 }
