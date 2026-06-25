@@ -1,3 +1,5 @@
+github.com/crgimenes/native v0.0.0-20260624104951-fb41a0e4f845 h1:Phrgc2xH6e1ygRiA1U7jCi66fHXbfXioTHbhKBCWKog=
+github.com/crgimenes/native v0.0.0-20260624104951-fb41a0e4f845/go.mod h1:r2iwllKCbmywZTk1MJNtcdur317e4r67J4+Tm29aiVU=
 github.com/ebitengine/gomobile v0.0.0-20260211053922-3d992dae95d1 h1:U8WldvN7/4cgo65U2fr2urv43/yhqYOK5FegFPPfI4M=
 github.com/ebitengine/gomobile v0.0.0-20260211053922-3d992dae95d1/go.mod h1:J7sDBRQG9pJGMa9Z+h8l3flwk0yEKDzWeR57vA1LI5U=
 github.com/ebitengine/hideconsole v1.0.0 h1:5J4U0kXF+pv/DhiXt5/lTz0eO5ogJ1iXb8Yj1yReDqE=

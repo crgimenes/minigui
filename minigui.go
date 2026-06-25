@@ -53,6 +53,7 @@ type Style struct {
 	ButtonOn  color.RGBA // active toggle background
 	Field     color.RGBA // text field and list background
 	Focus     color.RGBA // focused outline, caret and selection accent
+	Selection color.RGBA // background of selected text
 
 	RowH   float64 // height of a standard widget row
 	Pad    float64 // inner padding
@@ -71,6 +72,7 @@ func DefaultStyle() Style {
 		ButtonOn:  color.RGBA{0x1e, 0x44, 0x52, 0xff},
 		Field:     color.RGBA{0x06, 0x0c, 0x12, 0xff},
 		Focus:     color.RGBA{0x80, 0xff, 0xff, 0xff},
+		Selection: color.RGBA{0x24, 0x48, 0x55, 0xff},
 		RowH:      rowH,
 		Pad:       pad,
 		Gap:       gap,
@@ -90,6 +92,11 @@ type Input struct {
 	Left, Right    bool
 	Home, End      bool
 	Enter          bool
+	Shift          bool // shift held, to extend the selection with Left/Right/Home/End
+	Copy           bool // Ctrl/Cmd+C this frame
+	Cut            bool // Ctrl/Cmd+X this frame
+	Paste          bool // Ctrl/Cmd+V this frame
+	SelectAll      bool // Ctrl/Cmd+A this frame
 }
 
 type cmdKind int
@@ -117,6 +124,7 @@ type Context struct {
 	cmds         []drawCmd
 	focus        ID
 	caret        int
+	selAnchor    int            // other end of the selection; == caret means no selection
 	clickedField bool           // a field captured the click this frame
 	scroll       map[ID]float64 // persisted scroll position per list, in rows
 
@@ -196,6 +204,7 @@ func (c *Context) ensureStyle() {
 func (c *Context) End() {
 	if c.in.MouseClicked && !c.clickedField {
 		c.focus = ""
+		c.selAnchor = c.caret
 	}
 }
 
@@ -208,6 +217,7 @@ func (c *Context) HasFocus() bool {
 // ClearFocus drops keyboard focus, e.g. when the panel owning the field is hidden.
 func (c *Context) ClearFocus() {
 	c.focus = ""
+	c.selAnchor = c.caret
 }
 
 // Submitted reports whether Enter was pressed this frame while the field with the
@@ -431,6 +441,17 @@ func InputFromEbiten() Input {
 	in.Chars = ebiten.AppendInputChars(nil)
 	_, wy := ebiten.Wheel()
 	in.WheelY = wy
+
+	in.Shift = ebiten.IsKeyPressed(ebiten.KeyShift)
+	if ebiten.IsKeyPressed(ebiten.KeyControl) || ebiten.IsKeyPressed(ebiten.KeyMeta) {
+		// A Ctrl/Cmd modifier is held: read shortcuts, and drop text input so the
+		// letter is not also typed into a field.
+		in.Chars = nil
+		in.Copy = inpututil.IsKeyJustPressed(ebiten.KeyC)
+		in.Cut = inpututil.IsKeyJustPressed(ebiten.KeyX)
+		in.Paste = inpututil.IsKeyJustPressed(ebiten.KeyV)
+		in.SelectAll = inpututil.IsKeyJustPressed(ebiten.KeyA)
+	}
 	return in
 }
 

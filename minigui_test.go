@@ -3,40 +3,40 @@ package minigui
 import "testing"
 
 func TestEditTextInsertAndBackspace(t *testing.T) {
-	s, c := editText("", 0, Input{Chars: []rune("ab")})
+	s, c, a := editText("", 0, 0, Input{Chars: []rune("ab")})
 	if s != "ab" || c != 2 {
 		t.Fatalf("insert: got %q caret %d", s, c)
 	}
-	s, c = editText(s, c, Input{Backspace: true})
+	s, c, _ = editText(s, c, a, Input{Backspace: true})
 	if s != "a" || c != 1 {
 		t.Fatalf("backspace: got %q caret %d", s, c)
 	}
 }
 
 func TestEditTextInsertsAtCaret(t *testing.T) {
-	s, c := editText("ac", 1, Input{Chars: []rune("b")})
+	s, c, _ := editText("ac", 1, 1, Input{Chars: []rune("b")})
 	if s != "abc" || c != 2 {
 		t.Fatalf("mid insert: got %q caret %d", s, c)
 	}
 }
 
 func TestEditTextCaretMovement(t *testing.T) {
-	if _, c := editText("hello", 5, Input{Left: true}); c != 4 {
+	if _, c, _ := editText("hello", 5, 5, Input{Left: true}); c != 4 {
 		t.Fatalf("left caret %d", c)
 	}
-	if _, c := editText("hello", 0, Input{Right: true}); c != 1 {
+	if _, c, _ := editText("hello", 0, 0, Input{Right: true}); c != 1 {
 		t.Fatalf("right caret %d", c)
 	}
-	if _, c := editText("hello", 2, Input{Home: true}); c != 0 {
+	if _, c, _ := editText("hello", 2, 2, Input{Home: true}); c != 0 {
 		t.Fatalf("home caret %d", c)
 	}
-	if _, c := editText("hello", 2, Input{End: true}); c != 5 {
+	if _, c, _ := editText("hello", 2, 2, Input{End: true}); c != 5 {
 		t.Fatalf("end caret %d", c)
 	}
 }
 
 func TestEditTextSkipsControlChars(t *testing.T) {
-	if s, _ := editText("", 0, Input{Chars: []rune{'\n', '\t', 'x'}}); s != "x" {
+	if s, _, _ := editText("", 0, 0, Input{Chars: []rune{'\n', '\t', 'x'}}); s != "x" {
 		t.Fatalf("control chars not skipped: %q", s)
 	}
 }

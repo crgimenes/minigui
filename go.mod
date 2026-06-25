@@ -2,7 +2,10 @@ module github.com/crgimenes/minigui
 
 go 1.26
 
-require github.com/hajimehoshi/ebiten/v2 v2.10.0-alpha.11
+require (
+	github.com/crgimenes/native v0.0.0-20260624104951-fb41a0e4f845
+	github.com/hajimehoshi/ebiten/v2 v2.10.0-alpha.11
+)
 
 require (
 	github.com/ebitengine/gomobile v0.0.0-20260211053922-3d992dae95d1 // indirect
