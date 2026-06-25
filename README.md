@@ -95,6 +95,21 @@ gui.SetStyle(s)
 `SetFace` is a shortcut that sets only `Style.Face`; `Style()` returns the
 current style for reading or tweaking a single field.
 
+## Panels
+
+`BeginPanel(title, x, y)` / `EndPanel()` frame the widgets between them in a
+titled background box (a small simulated window), auto-sized to the content.
+`EndPanel` returns the panel's screen rectangle, handy for hit-testing the whole
+panel — e.g. to keep it interactive in a click-through overlay.
+
+```go
+gui.Begin(in, 0, 0)
+gui.BeginPanel("Tools", 8, 8)
+gui.Toggle("draw", "Draw", drawing)
+rect := gui.EndPanel()
+gui.End()
+```
+
 ## Install
 
 ```sh

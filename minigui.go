@@ -127,6 +127,14 @@ type Context struct {
 
 	style    Style // colors, metrics and face; defaults to DefaultStyle
 	styleSet bool  // whether style has been initialized
+
+	// Panel state, used between BeginPanel and EndPanel. Panels do not nest.
+	inPanel              bool
+	panelBgIdx           int // draw-command index of the panel background fill
+	panelTitleIdx        int // draw-command index of the title-bar fill
+	panelX, panelY       float64
+	panelMaxX, panelMaxY float64 // running content extent, for auto-sizing
+	savedX0              float64 // layout origin saved across the panel
 }
 
 // Begin starts a frame, laying widgets out from the given top-left position.
@@ -138,6 +146,7 @@ func (c *Context) Begin(in Input, x, y float64) {
 	c.cmds = c.cmds[:0]
 	c.clickedField = false
 	c.itemW = 0
+	c.inPanel = false
 }
 
 // SetItemWidth fixes the width of subsequent buttons and toggles so a column of
@@ -346,6 +355,14 @@ func (c *Context) advance(w, h float64) {
 	c.lastX = c.x
 	c.lastY = c.y
 	c.lastW = w
+	if c.inPanel {
+		if r := c.x + w; r > c.panelMaxX {
+			c.panelMaxX = r
+		}
+		if b := c.y + h; b > c.panelMaxY {
+			c.panelMaxY = b
+		}
+	}
 	c.newlineH(h)
 }
 
