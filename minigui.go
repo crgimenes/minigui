@@ -148,11 +148,18 @@ type Context struct {
 	curWin         *Window
 	dragWin        *Window
 	dragDX, dragDY float64
+
+	// Text-selection mouse state. frame counts frames for double-click timing.
+	frame          int
+	dragField      ID
+	lastClickFrame int
+	lastClickField ID
 }
 
 // Begin starts a frame, laying widgets out from the given top-left position.
 func (c *Context) Begin(in Input, x, y float64) {
 	c.ensureStyle()
+	c.frame++
 	c.in = in
 	c.x0, c.y0 = x, y
 	c.x, c.y = x, y

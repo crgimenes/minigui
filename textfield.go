@@ -2,9 +2,14 @@ package minigui
 
 import (
 	"image"
+	"unicode"
 
 	"github.com/crgimenes/native/clipboard"
 )
+
+// doubleClickFrames is how many frames apart two clicks on the same field still
+// count as a double-click (~1/3 s at 60 fps).
+const doubleClickFrames = 20
 
 func clampInt(v, lo, hi int) int {
 	if v < lo {
@@ -50,6 +55,54 @@ func inlineRunes(s string) []rune {
 		out = append(out, ch)
 	}
 	return out
+}
+
+// caretAtX returns the rune index in s nearest to the text-space x position (x is
+// relative to the start of the text, with horizontal scroll already applied).
+func (c *Context) caretAtX(s string, x float64) int {
+	if x <= 0 {
+		return 0
+	}
+	r := []rune(s)
+	prev := 0.0
+	for i := 1; i <= len(r); i++ {
+		cur := c.textWidth(string(r[:i]))
+		if x < (prev+cur)/2 {
+			return i - 1
+		}
+		prev = cur
+	}
+	return len(r)
+}
+
+// wordBounds returns the [lo, hi) rune range of the word at pos, used by
+// double-click. A click off a word selects the single rune under it.
+func wordBounds(s string, pos int) (lo, hi int) {
+	r := []rune(s)
+	n := len(r)
+	if n == 0 {
+		return 0, 0
+	}
+	if pos < 0 {
+		pos = 0
+	}
+	if pos >= n {
+		pos = n - 1
+	}
+	word := func(ch rune) bool {
+		return unicode.IsLetter(ch) || unicode.IsDigit(ch) || ch == '_'
+	}
+	if !word(r[pos]) {
+		return pos, pos + 1
+	}
+	lo, hi = pos, pos+1
+	for lo > 0 && word(r[lo-1]) {
+		lo--
+	}
+	for hi < n && word(r[hi]) {
+		hi++
+	}
+	return lo, hi
 }
 
 // editText applies one frame of keyboard input to a single-line buffer with a
@@ -132,11 +185,32 @@ func editText(s string, caret, anchor int, in Input) (string, int, int) {
 func (c *Context) TextField(id ID, s *string) bool {
 	w, h := c.style.FieldW, c.rowHeight()
 	hot := within(c.in.MouseX, c.in.MouseY, c.x, c.y, w, h)
-	if hot && c.in.MouseClicked {
+
+	// Mouse: click positions the caret, Shift+click and drag extend the selection,
+	// and a double-click selects the word. localX is the click in text space.
+	localX := c.in.MouseX - (c.x + c.style.Pad) + c.scroll[id]
+	switch {
+	case hot && c.in.MouseClicked:
+		idx := c.caretAtX(*s, localX)
 		c.focus = id
-		c.caret = len([]rune(*s))
-		c.selAnchor = c.caret
 		c.clickedField = true
+		c.dragField = id
+		double := c.lastClickField == id && c.frame-c.lastClickFrame <= doubleClickFrames
+		switch {
+		case double:
+			c.selAnchor, c.caret = wordBounds(*s, idx)
+		case c.in.Shift:
+			c.caret = idx
+		default:
+			c.caret, c.selAnchor = idx, idx
+		}
+		c.lastClickField = id
+		c.lastClickFrame = c.frame
+	case c.dragField == id && c.in.MouseDown:
+		c.caret = c.caretAtX(*s, localX)
+	}
+	if !c.in.MouseDown {
+		c.dragField = ""
 	}
 
 	focused := c.focus == id
