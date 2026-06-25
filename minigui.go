@@ -230,6 +230,17 @@ func (c *Context) ClearFocus() {
 	c.selAnchor = c.caret
 }
 
+// Focus gives keyboard focus to the field with the given id, e.g. to focus a text
+// field as soon as its window opens, with the caret at the start of the text. It
+// marks the click as handled so End does not clear the focus on the same frame as
+// the click that triggered the focusing.
+func (c *Context) Focus(id ID) {
+	c.focus = id
+	c.caret = 0
+	c.selAnchor = 0
+	c.clickedField = true
+}
+
 // Submitted reports whether Enter was pressed this frame while the field with the
 // given id had keyboard focus — handy to run a command typed into a TextField.
 // Call it after the field so focus reflects this frame's clicks.
