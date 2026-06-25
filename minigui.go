@@ -135,6 +135,11 @@ type Context struct {
 	panelX, panelY       float64
 	panelMaxX, panelMaxY float64 // running content extent, for auto-sizing
 	savedX0              float64 // layout origin saved across the panel
+
+	// Window state. dragWin/dragDX/dragDY persist across frames while dragging.
+	curWin         *Window
+	dragWin        *Window
+	dragDX, dragDY float64
 }
 
 // Begin starts a frame, laying widgets out from the given top-left position.
