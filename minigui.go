@@ -205,6 +205,13 @@ func (c *Context) ClearFocus() {
 	c.focus = ""
 }
 
+// Submitted reports whether Enter was pressed this frame while the field with the
+// given id had keyboard focus — handy to run a command typed into a TextField.
+// Call it after the field so focus reflects this frame's clicks.
+func (c *Context) Submitted(id ID) bool {
+	return c.focus == id && c.in.Enter
+}
+
 // SameLine places the next widget to the right of the one just drawn, on the
 // same row, instead of on a new line below it.
 func (c *Context) SameLine() {
