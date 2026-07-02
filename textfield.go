@@ -10,13 +10,7 @@ import (
 const doubleClickFrames = 20
 
 func clampInt(v, lo, hi int) int {
-	if v < lo {
-		return lo
-	}
-	if v > hi {
-		return hi
-	}
-	return v
+	return min(max(v, lo), hi)
 }
 
 // selRange returns the selection bounds [lo, hi) for a caret/anchor pair; lo == hi
@@ -279,11 +273,5 @@ func (c *Context) TextField(id ID, s *string) bool {
 }
 
 func clampF(v, lo, hi float64) float64 {
-	if v < lo {
-		return lo
-	}
-	if v > hi {
-		return hi
-	}
-	return v
+	return min(max(v, lo), hi)
 }

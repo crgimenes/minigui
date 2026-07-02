@@ -2,8 +2,9 @@
 
 A tiny immediate-mode GUI toolkit for [Ebitengine](https://ebitengine.org),
 meant to be shared across small Ebiten programs that need basic user input
-without pulling in a heavy widget framework. Its only dependency is Ebitengine
-itself; everything else is the Go standard library.
+without pulling in a heavy widget framework. Its dependencies are Ebitengine
+itself and [`native`](https://github.com/crgimenes/native) (cgo-free system
+clipboard for copy/cut/paste); everything else is the Go standard library.
 
 > Status: early but usable — pluggable text faces (see [Fonts](#fonts)) and
 > per-app styling (see [Theming](#theming)).
@@ -46,13 +47,21 @@ func (g *game) Draw(screen *ebiten.Image) {
 - `Swatch(id, color, selected) bool` — clickable color square.
 - `TextField(id, *string) bool` — editable single-line field (focus, caret,
   horizontal scroll); reports whether the text changed.
+- `TextArea(id, *string, rows) bool` — multi-line editor (Enter inserts a line,
+  Up/Down move between lines, line-relative Home/End, vertical scroll).
 - `List(id, items, *selected) bool` / `ListWithIcons(...)` — scrollable,
   selectable list; the icon variant reserves a square per row for the caller to
   draw into.
 
+Text editing (TextField and TextArea) comes with selection (Shift+arrows, mouse
+drag, double-click word select, Ctrl/Cmd+A), system-clipboard copy/cut/paste
+(Ctrl/Cmd+C/X/V, via `native/clipboard`), and undo (Ctrl/Cmd+Z, with typing
+runs coalesced).
+
 Layout helpers: `SameLine`, `SetItemWidth`. Focus helpers: `HasFocus`,
 `ClearFocus` (so the host can suspend single-key shortcuts while a field is
-being typed into).
+being typed into), `Focus(id)` to hand focus to a widget, and `Submitted(id)`
+to detect Enter in a field.
 
 ## Fonts
 
@@ -95,6 +104,9 @@ gui.SetStyle(s)
 `SetFace` is a shortcut that sets only `Style.Face`; `Style()` returns the
 current style for reading or tweaking a single field.
 
+`VGAPalette` is the classic 16-color IBM VGA text palette as hex strings —
+handy as a ready-made swatch set for `Swatch` rows in retro-styled tools.
+
 ## Panels
 
 `BeginPanel(title, x, y)` / `EndPanel()` frame the widgets between them in a
@@ -108,6 +120,24 @@ gui.BeginPanel("Tools", 8, 8)
 gui.Toggle("draw", "Draw", drawing)
 rect := gui.EndPanel()
 gui.End()
+```
+
+## Windows
+
+A `Window` is a panel with a life of its own: draggable by the title bar and
+closable by a close box. The caller owns the state (`X`, `Y`, `Open` persist
+across frames); minigui moves `X`/`Y` during a drag and clears `Open` on close
+(`NoClose` hides the close box, e.g. for an always-present toolbar).
+`Dragging()` reports an in-progress drag, so a click-through host can keep
+grabbing the mouse until the drag ends.
+
+```go
+var win = minigui.Window{Title: "Tools", X: 8, Y: 8, Open: true}
+
+if gui.BeginWindow(&win) {
+	gui.Toggle("draw", "Draw", drawing)
+	gui.EndWindow()
+}
 ```
 
 ## Install
