@@ -9,7 +9,8 @@ func TestStyleInjectionMetrics(t *testing.T) {
 	c.SetStyle(s)
 
 	c.Begin(Input{}, 0, 0)
-	if got := c.rowHeight(); got != 40 {
+	got := c.rowHeight()
+	if got != 40 {
 		t.Fatalf("rowHeight() = %v, want 40 (injected RowH)", got)
 	}
 }
@@ -33,7 +34,8 @@ func TestStyleInjectionFieldWidth(t *testing.T) {
 func TestZeroValueContextUsesDefaultStyle(t *testing.T) {
 	var c Context
 	c.Begin(Input{}, 0, 0)
-	if got, want := c.rowHeight(), DefaultStyle().RowH; got != want {
+	got, want := c.rowHeight(), DefaultStyle().RowH
+	if got != want {
 		t.Fatalf("zero-value rowHeight() = %v, want %v", got, want)
 	}
 }

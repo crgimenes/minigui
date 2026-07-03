@@ -55,7 +55,8 @@ func TestListScrollClampsToEnd(t *testing.T) {
 	c.List("L", items, &sel)
 	c.End()
 
-	if got := c.scroll["L"]; got != 4 {
+	got := c.scroll["L"]
+	if got != 4 {
 		t.Fatalf("scroll clamped to %v, want 4 (maxOff)", got)
 	}
 }

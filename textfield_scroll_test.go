@@ -37,7 +37,8 @@ func TestTextFieldNoScrollWhenItFits(t *testing.T) {
 	c.TextField("f", &s)
 	c.End()
 
-	if xoff := c.scroll["f"]; xoff != 0 {
+	xoff := c.scroll["f"]
+	if xoff != 0 {
 		t.Fatalf("text that fits should not scroll, xoff=%v", xoff)
 	}
 }

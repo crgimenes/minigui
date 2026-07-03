@@ -55,7 +55,8 @@ func main() {
 	}
 
 	d := &demo{name: "world", notes: "type here\nmultiple lines\nshift+arrows select", items: items}
-	if face, err := minigui.SystemFace(16); err != nil {
+	face, err := minigui.SystemFace(16)
+	if err != nil {
 		log.Printf("minigui-demo: %v; using debug font", err)
 	} else {
 		d.gui.SetFace(face)
@@ -63,7 +64,8 @@ func main() {
 
 	ebiten.SetWindowSize(520, 560)
 	ebiten.SetWindowTitle("minigui demo")
-	if err := ebiten.RunGame(d); err != nil {
+	err = ebiten.RunGame(d)
+	if err != nil {
 		panic(err)
 	}
 }

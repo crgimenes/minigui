@@ -231,7 +231,8 @@ func (c *Context) TextField(id ID, s *string) bool {
 	} else {
 		xoff = 0
 	}
-	if maxX := textW - inner; xoff > maxX {
+	maxX := textW - inner
+	if xoff > maxX {
 		xoff = maxX
 	}
 	if xoff < 0 {
@@ -250,7 +251,8 @@ func (c *Context) TextField(id ID, s *string) bool {
 
 	// Selection highlight behind the text, clamped to the field interior.
 	if focused {
-		if lo, hi := selRange(caret, clampInt(c.selAnchor, 0, len(runes))); lo != hi {
+		lo, hi := selRange(caret, clampInt(c.selAnchor, 0, len(runes)))
+		if lo != hi {
 			x0 := textX + c.textWidth(string(runes[:lo]))
 			x1 := textX + c.textWidth(string(runes[:hi]))
 			left, right := c.x+1, c.x+w-1

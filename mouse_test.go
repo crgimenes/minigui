@@ -15,7 +15,8 @@ func TestCaretAtX(t *testing.T) {
 		{100, 3}, // past the end clamps to len
 	}
 	for _, tc := range cases {
-		if got := c.caretAtX("abc", tc.x); got != tc.want {
+		got := c.caretAtX("abc", tc.x)
+		if got != tc.want {
 			t.Errorf("caretAtX(%q, %v) = %d, want %d", "abc", tc.x, got, tc.want)
 		}
 	}
@@ -30,10 +31,12 @@ func TestWordBounds(t *testing.T) {
 	if lo != 3 || hi != 4 {
 		t.Errorf("space at 3: [%d,%d), want [3,4)", lo, hi)
 	}
-	if lo, hi := wordBounds("", 0); lo != 0 || hi != 0 {
+	lo, hi = wordBounds("", 0)
+	if lo != 0 || hi != 0 {
 		t.Errorf("empty: [%d,%d), want [0,0)", lo, hi)
 	}
-	if lo, hi := wordBounds("hi", 5); lo != 0 || hi != 2 { // pos clamps into range
+	lo, hi = wordBounds("hi", 5)
+	if lo != 0 || hi != 2 { // pos clamps into range
 		t.Errorf("clamped: [%d,%d), want [0,2)", lo, hi)
 	}
 }

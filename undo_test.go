@@ -57,13 +57,16 @@ func TestPushPopUndo(t *testing.T) {
 	var c Context
 	c.pushUndo("f", "a", 1, false)
 	c.pushUndo("f", "b", 2, false)
-	if snap, ok := c.popUndo("f"); !ok || snap.text != "b" || snap.caret != 2 {
+	snap, ok := c.popUndo("f")
+	if !ok || snap.text != "b" || snap.caret != 2 {
 		t.Fatalf("pop = %+v ok=%v, want {b 2} true", snap, ok)
 	}
-	if snap, ok := c.popUndo("f"); !ok || snap.text != "a" {
+	snap, ok = c.popUndo("f")
+	if !ok || snap.text != "a" {
 		t.Fatalf("pop = %+v ok=%v, want {a 1} true", snap, ok)
 	}
-	if _, ok := c.popUndo("f"); ok {
+	_, ok = c.popUndo("f")
+	if ok {
 		t.Fatal("pop on empty stack should report !ok")
 	}
 }
@@ -72,7 +75,8 @@ func TestPushUndoCoalesceKeepsOneEntry(t *testing.T) {
 	var c Context
 	c.pushUndo("f", "", 0, true)
 	c.pushUndo("f", "a", 1, true) // same run, coalesced away
-	if n := len(c.undo["f"]); n != 1 {
+	n := len(c.undo["f"])
+	if n != 1 {
 		t.Fatalf("coalesced run has %d entries, want 1", n)
 	}
 }

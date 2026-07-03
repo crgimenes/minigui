@@ -17,7 +17,8 @@ func TestPanelSizesToContent(t *testing.T) {
 		t.Fatalf("panel has empty size: %v", rect)
 	}
 	// The panel must enclose at least the title bar plus one widget row.
-	if want := int(2 * DefaultStyle().RowH); rect.Dy() < want {
+	want := int(2 * DefaultStyle().RowH)
+	if rect.Dy() < want {
 		t.Fatalf("panel height %d, want >= %d (title + row)", rect.Dy(), want)
 	}
 }

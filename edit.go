@@ -83,7 +83,8 @@ func (c *Context) editFocused(id ID, s *string, edit func(string, int, int, Inpu
 	ns, nc, na := edit(*s, c.caret, c.selAnchor, c.in)
 
 	if c.in.Copy || c.in.Cut {
-		if lo, hi := selRange(nc, na); lo != hi {
+		lo, hi := selRange(nc, na)
+		if lo != hi {
 			_ = clipboard.WriteText(string([]rune(ns)[lo:hi]))
 			if c.in.Cut {
 				ns, nc, na = insertRunes(ns, nc, na, nil)
@@ -91,8 +92,10 @@ func (c *Context) editFocused(id ID, s *string, edit func(string, int, int, Inpu
 		}
 	}
 	if c.in.Paste {
-		if txt, err := clipboard.ReadText(); err == nil {
-			if ins := sanitize(txt); len(ins) > 0 {
+		txt, err := clipboard.ReadText()
+		if err == nil {
+			ins := sanitize(txt)
+			if len(ins) > 0 {
 				ns, nc, na = insertRunes(ns, nc, na, ins)
 			}
 		}

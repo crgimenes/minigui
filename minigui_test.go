@@ -21,22 +21,27 @@ func TestEditTextInsertsAtCaret(t *testing.T) {
 }
 
 func TestEditTextCaretMovement(t *testing.T) {
-	if _, c, _ := editText("hello", 5, 5, Input{Left: true}); c != 4 {
+	_, c, _ := editText("hello", 5, 5, Input{Left: true})
+	if c != 4 {
 		t.Fatalf("left caret %d", c)
 	}
-	if _, c, _ := editText("hello", 0, 0, Input{Right: true}); c != 1 {
+	_, c, _ = editText("hello", 0, 0, Input{Right: true})
+	if c != 1 {
 		t.Fatalf("right caret %d", c)
 	}
-	if _, c, _ := editText("hello", 2, 2, Input{Home: true}); c != 0 {
+	_, c, _ = editText("hello", 2, 2, Input{Home: true})
+	if c != 0 {
 		t.Fatalf("home caret %d", c)
 	}
-	if _, c, _ := editText("hello", 2, 2, Input{End: true}); c != 5 {
+	_, c, _ = editText("hello", 2, 2, Input{End: true})
+	if c != 5 {
 		t.Fatalf("end caret %d", c)
 	}
 }
 
 func TestEditTextSkipsControlChars(t *testing.T) {
-	if s, _, _ := editText("", 0, 0, Input{Chars: []rune{'\n', '\t', 'x'}}); s != "x" {
+	s, _, _ := editText("", 0, 0, Input{Chars: []rune{'\n', '\t', 'x'}})
+	if s != "x" {
 		t.Fatalf("control chars not skipped: %q", s)
 	}
 }

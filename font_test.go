@@ -14,13 +14,16 @@ func TestSystemFaceMeasures(t *testing.T) {
 	var c Context
 	c.SetFace(face)
 
-	if w := c.textWidth("AB"); w <= 0 {
+	w := c.textWidth("AB")
+	if w <= 0 {
 		t.Fatalf(`textWidth("AB") = %v, want > 0`, w)
 	}
-	if w := c.textWidth("日本語"); w <= 0 {
+	w = c.textWidth("日本語")
+	if w <= 0 {
 		t.Fatalf("textWidth(CJK) = %v, want > 0", w)
 	}
-	if rh := c.rowHeight(); rh < rowH {
+	rh := c.rowHeight()
+	if rh < rowH {
 		t.Fatalf("rowHeight() = %v, want >= %d", rh, rowH)
 	}
 }

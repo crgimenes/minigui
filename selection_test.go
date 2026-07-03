@@ -51,7 +51,8 @@ func TestInsertRunesNilDeletes(t *testing.T) {
 }
 
 func TestInlineRunesStripsControl(t *testing.T) {
-	if got := string(inlineRunes("a\nb\tc")); got != "abc" {
+	got := string(inlineRunes("a\nb\tc"))
+	if got != "abc" {
 		t.Fatalf("inlineRunes = %q, want \"abc\"", got)
 	}
 }

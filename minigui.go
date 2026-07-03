@@ -399,10 +399,12 @@ func (c *Context) advance(w, h float64) {
 	c.lastY = c.y
 	c.lastW = w
 	if c.inPanel {
-		if r := c.x + w; r > c.panelMaxX {
+		r := c.x + w
+		if r > c.panelMaxX {
 			c.panelMaxX = r
 		}
-		if b := c.y + h; b > c.panelMaxY {
+		b := c.y + h
+		if b > c.panelMaxY {
 			c.panelMaxY = b
 		}
 	}
