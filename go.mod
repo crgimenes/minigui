@@ -3,7 +3,7 @@ module github.com/crgimenes/minigui
 go 1.26
 
 require (
-	github.com/crgimenes/native v0.1.2
+	github.com/crgimenes/native v0.1.3
 	github.com/hajimehoshi/ebiten/v2 v2.10.0-alpha.11
 )
 
