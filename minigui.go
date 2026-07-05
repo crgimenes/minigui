@@ -129,6 +129,7 @@ type Context struct {
 	clickedField bool              // a field captured the click this frame
 	scroll       map[ID]float64    // persisted horizontal scroll per field/list
 	vscroll      map[ID]float64    // persisted vertical scroll per text area, in lines
+	listSel      map[ID]int        // last-seen selection per list, to scroll external changes into view
 	undo         map[ID][]undoSnap // per-field undo history (pre-edit snapshots)
 	undoCoalesce ID                // field whose run of typing is being coalesced
 

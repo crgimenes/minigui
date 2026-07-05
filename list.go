@@ -43,8 +43,26 @@ func (c *Context) list(id ID, items []string, selected *int, iconPx float64) (ch
 
 	maxOff := max(len(items)-listRows, 0)
 	pos := c.scroll[id]
+	wheeling := false
 	if within(c.in.MouseX, c.in.MouseY, c.x, c.y, w, h) {
 		pos -= c.in.WheelY // wheel down (negative dy) scrolls toward later items
+		wheeling = c.in.WheelY != 0
+	}
+	// A selection the caller changed since the last frame (loading a file,
+	// appending an entry) — or set before the list's very first frame —
+	// scrolls into view. An actively turning wheel wins over the auto-scroll,
+	// and a steady selection never snaps the scroll back.
+	if c.listSel == nil {
+		c.listSel = map[ID]int{}
+	}
+	last, seen := c.listSel[id]
+	if !wheeling && (!seen || last != *selected) && *selected >= 0 && *selected < len(items) {
+		if *selected < int(pos) {
+			pos = float64(*selected)
+		}
+		if *selected >= int(pos)+listRows {
+			pos = float64(*selected - listRows + 1)
+		}
 	}
 	if pos < 0 {
 		pos = 0
@@ -101,6 +119,10 @@ func (c *Context) list(id ID, items []string, selected *int, iconPx float64) (ch
 		}
 		c.fill(c.x+w-3, thumbY, 3, thumbH, c.style.Border)
 	}
+
+	// Remembered after click handling, so a click never triggers the
+	// scroll-into-view path itself: clicked rows are visible by definition.
+	c.listSel[id] = *selected
 
 	c.advance(w, h)
 	return changed, clicked, icons
