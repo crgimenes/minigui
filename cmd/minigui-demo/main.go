@@ -15,12 +15,13 @@ import (
 )
 
 type demo struct {
-	gui   minigui.Context
-	count int
-	name  string
-	notes string
-	items []string
-	sel   int
+	gui    minigui.Context
+	count  int
+	name   string
+	notes  string
+	items  []string
+	sel    int
+	volume float64
 }
 
 func (d *demo) Update() error {
@@ -31,6 +32,8 @@ func (d *demo) Update() error {
 		d.count++
 	}
 	d.gui.TextField("name", &d.name)
+	d.gui.Label(fmt.Sprintf("volume: %3.0f%%", d.volume))
+	d.gui.Slider("volume", &d.volume, 0, 100)
 	d.gui.List("items", d.items, &d.sel)
 	d.gui.Label(fmt.Sprintf("selected: %s", d.items[d.sel]))
 	d.gui.Label("notes (multi-line):")
@@ -45,7 +48,7 @@ func (d *demo) Draw(screen *ebiten.Image) {
 }
 
 func (d *demo) Layout(int, int) (int, int) {
-	return 520, 560
+	return 520, 620
 }
 
 func main() {
@@ -54,7 +57,7 @@ func main() {
 		items[i] = fmt.Sprintf("item %02d", i)
 	}
 
-	d := &demo{name: "world", notes: "type here\nmultiple lines\nshift+arrows select", items: items}
+	d := &demo{name: "world", notes: "type here\nmultiple lines\nshift+arrows select", items: items, volume: 40}
 	face, err := minigui.SystemFace(16)
 	if err != nil {
 		log.Printf("minigui-demo: %v; using debug font", err)
@@ -62,7 +65,7 @@ func main() {
 		d.gui.SetFace(face)
 	}
 
-	ebiten.SetWindowSize(520, 560)
+	ebiten.SetWindowSize(520, 620)
 	ebiten.SetWindowTitle("minigui demo")
 	err = ebiten.RunGame(d)
 	if err != nil {

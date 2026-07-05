@@ -157,6 +157,9 @@ type Context struct {
 	dragField      ID
 	lastClickFrame int
 	lastClickField ID
+
+	// Slider currently held by the mouse; released by Begin when the button is up.
+	dragSlider ID
 }
 
 // Begin starts a frame, laying widgets out from the given top-left position.
@@ -170,6 +173,11 @@ func (c *Context) Begin(in Input, x, y float64) {
 	c.clickedField = false
 	c.itemW = 0
 	c.inPanel = false
+	if !in.MouseDown {
+		// Release a held slider here, not in the widget, so the grab cannot go
+		// stale if the slider stops being drawn mid-drag.
+		c.dragSlider = ""
+	}
 }
 
 // SetItemWidth fixes the width of subsequent buttons and toggles so a column of
