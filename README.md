@@ -155,3 +155,14 @@ go run github.com/crgimenes/minigui/cmd/minigui-demo
 ## License
 
 See [`LICENSE`](LICENSE).
+
+---
+
+## More of my projects
+
+- [native](https://github.com/crgimenes/native): cgo-free Go bindings for OS APIs: clipboard, mmap, keep-awake, and friends.
+- [NeoFrame](https://github.com/crgimenes/NeoFrame): draw over your screen; a transparent overlay for demos and classes.
+- [kutta](https://github.com/crgimenes/kutta): a 2D wind tunnel; watch air misbehave around an airfoil.
+- [glaze](https://github.com/crgimenes/glaze): WebView desktop apps in Go, cgo-free.
+
+More at [github.com/crgimenes](https://github.com/crgimenes) and [crg.eti.br](https://crg.eti.br).
