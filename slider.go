@@ -1,10 +1,10 @@
 package minigui
 
-// Slider geometry in logical pixels: the visible track is a thin bar centered
-// in the row, and the knob is a square riding on it.
+// Slider geometry in logical pixels: the visible track is a thin line centered
+// in the row, and the knob is a circle riding on it.
 const (
-	sliderTrackH = 4
-	sliderKnob   = 14
+	sliderTrackH = 2
+	sliderKnobR  = 7
 )
 
 // Slider draws a horizontal draggable track that edits *val within [lo, hi],
@@ -32,25 +32,17 @@ func (c *Context) Slider(id ID, val *float64, lo, hi float64) bool {
 		}
 	}
 
-	// Track, filled up to the value, then the knob centered on it.
+	// Track line, filled up to the value, then the knob circle centered on it.
 	t := sliderT(*val, lo, hi)
 	trackY := y + (h-sliderTrackH)/2
-	c.fill(x, trackY, w, sliderTrackH, c.style.Field)
+	c.fill(x, trackY, w, sliderTrackH, c.style.Border)
 	c.fill(x, trackY, t*w, sliderTrackH, c.style.ButtonOn)
-	c.border(x, trackY, w, sliderTrackH, c.style.Border)
 
-	knobFill := c.style.Button
+	knob := c.style.Text
 	if hot || dragging {
-		knobFill = c.style.ButtonHot
+		knob = c.style.Focus
 	}
-	knobBorder := c.style.Border
-	if dragging {
-		knobBorder = c.style.Focus
-	}
-	kx := x + t*w - sliderKnob/2
-	ky := y + (h-sliderKnob)/2
-	c.fill(kx, ky, sliderKnob, sliderKnob, knobFill)
-	c.border(kx, ky, sliderKnob, sliderKnob, knobBorder)
+	c.circle(x+t*w, y+h/2, sliderKnobR, knob)
 
 	c.advance(w, h)
 	return changed

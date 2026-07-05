@@ -105,11 +105,12 @@ const (
 	cmdFill cmdKind = iota
 	cmdBorder
 	cmdText
+	cmdCircle
 )
 
 type drawCmd struct {
 	kind       cmdKind
-	x, y, w, h float64
+	x, y, w, h float64 // circle: x,y is the center and w the radius
 	col        color.RGBA
 	s          string
 	clip       image.Rectangle // text only: clip the glyphs to this rect when set
@@ -342,6 +343,8 @@ func (c *Context) Render(dst *ebiten.Image) {
 			vector.StrokeRect(dst, float32(cmd.x), float32(cmd.y), float32(cmd.w), float32(cmd.h), 1, cmd.col, true)
 		case cmdText:
 			c.drawText(dst, cmd)
+		case cmdCircle:
+			vector.FillCircle(dst, float32(cmd.x), float32(cmd.y), float32(cmd.w), cmd.col, true)
 		}
 	}
 }
@@ -440,6 +443,10 @@ func (c *Context) fill(x, y, w, h float64, col color.RGBA) {
 
 func (c *Context) border(x, y, w, h float64, col color.RGBA) {
 	c.cmds = append(c.cmds, drawCmd{kind: cmdBorder, x: x, y: y, w: w, h: h, col: col})
+}
+
+func (c *Context) circle(x, y, r float64, col color.RGBA) {
+	c.cmds = append(c.cmds, drawCmd{kind: cmdCircle, x: x, y: y, w: r, col: col})
 }
 
 func (c *Context) textAt(x, y float64, s string, col color.RGBA) {
