@@ -256,7 +256,10 @@ func (c *Context) TextArea(id ID, s *string, rows int) bool {
 	caret := clampInt(c.caret, 0, len(runes))
 	anchor := clampInt(c.selAnchor, 0, len(runes))
 	caretLine := lineOf(caret)
-	caretPx := c.textWidth(string(runes[lineStarts[caretLine]:caret]))
+	// Measured against the whole caret line rather than the prefix alone, so
+	// shaping that reaches across the caret still places it correctly.
+	caretLineStart := lineStarts[caretLine]
+	caretPx := c.caretX(string(runes[caretLineStart:contentEnd(caretLine)]), caret-caretLineStart)
 
 	// Vertical scroll: keep the caret line on screen.
 	if caretLine < top {
@@ -312,8 +315,9 @@ func (c *Context) TextArea(id ID, s *string, rows int) bool {
 			se := min(hi, ce)
 			selNewline := li+1 < numLines && lo <= ce && ce < hi
 			if ss < se || selNewline {
-				x0 := textX0 + c.textWidth(string(runes[ls:ss]))
-				x1 := textX0 + c.textWidth(string(runes[ls:se]))
+				lineText := string(runes[ls:ce])
+				x0 := textX0 + c.caretX(lineText, ss-ls)
+				x1 := textX0 + c.caretX(lineText, se-ls)
 				if selNewline {
 					x1 = right
 				}

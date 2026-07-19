@@ -3,6 +3,7 @@ package minigui
 import (
 	"image"
 	"unicode"
+	"unicode/utf8"
 )
 
 // doubleClickFrames is how many frames apart two clicks on the same field still
@@ -55,16 +56,16 @@ func (c *Context) caretAtX(s string, x float64) int {
 	if x <= 0 {
 		return 0
 	}
-	r := []rune(s)
+	n := utf8.RuneCountInString(s)
 	prev := 0.0
-	for i := 1; i <= len(r); i++ {
-		cur := c.textWidth(string(r[:i]))
+	for i := 1; i <= n; i++ {
+		cur := c.caretX(s, i)
 		if x < (prev+cur)/2 {
 			return i - 1
 		}
 		prev = cur
 	}
-	return len(r)
+	return n
 }
 
 // wordBounds returns the [lo, hi) rune range of the word at pos, used by
@@ -217,7 +218,7 @@ func (c *Context) TextField(id ID, s *string) bool {
 	inner := w - 2*c.style.Pad
 	runes := []rune(*s)
 	caret := clampInt(c.caret, 0, len(runes))
-	caretPx := c.textWidth(string(runes[:caret]))
+	caretPx := c.caretX(*s, caret)
 	textW := c.textWidth(*s)
 
 	xoff := c.scroll[id]
@@ -253,8 +254,8 @@ func (c *Context) TextField(id ID, s *string) bool {
 	if focused {
 		lo, hi := selRange(caret, clampInt(c.selAnchor, 0, len(runes)))
 		if lo != hi {
-			x0 := textX + c.textWidth(string(runes[:lo]))
-			x1 := textX + c.textWidth(string(runes[:hi]))
+			x0 := textX + c.caretX(*s, lo)
+			x1 := textX + c.caretX(*s, hi)
 			left, right := c.x+1, c.x+w-1
 			x0 = clampF(x0, left, right)
 			x1 = clampF(x1, left, right)

@@ -8,6 +8,7 @@ package minigui
 import (
 	"image"
 	"image/color"
+	"unicode/utf8"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
@@ -376,9 +377,49 @@ func (c *Context) drawText(dst *ebiten.Image, cmd *drawCmd) {
 // face, or the fixed-cell width when no face is set.
 func (c *Context) textWidth(s string) float64 {
 	if c.style.Face == nil {
-		return float64(len([]rune(s))) * charW
+		return float64(utf8.RuneCountInString(s)) * charW
 	}
-	return text.Advance(s, c.style.Face)
+	// The end of the line is the whole width, and len(s) is already the byte
+	// index of it, so this needs none of caretX's rune counting.
+	return text.AdvanceAt(s, len(s), c.style.Face)
+}
+
+// caretX returns the distance from the start of line to the caret that sits
+// before rune runeIndex, in logical pixels.
+//
+// Measuring a prefix on its own is not the same as measuring it in place: a
+// ligature, a contextual form or kerning across the cut can all move the
+// boundary. AdvanceAt shapes the whole line and then reports the offset within
+// it, so the caret and the selection edges land where the glyphs really are.
+func (c *Context) caretX(line string, runeIndex int) float64 {
+	n := utf8.RuneCountInString(line)
+	if runeIndex > n {
+		runeIndex = n
+	}
+	if runeIndex < 0 {
+		runeIndex = 0
+	}
+	if c.style.Face == nil {
+		return float64(runeIndex) * charW
+	}
+	return text.AdvanceAt(line, byteIndexOfRune(line, runeIndex), c.style.Face)
+}
+
+// byteIndexOfRune converts a rune offset into the byte offset AdvanceAt takes.
+// Editing works in runes so multi-byte characters stay whole, while the text
+// package indexes by byte, and this is the seam between the two.
+func byteIndexOfRune(s string, runeIndex int) int {
+	if runeIndex <= 0 {
+		return 0
+	}
+	n := 0
+	for i := range s {
+		if n == runeIndex {
+			return i
+		}
+		n++
+	}
+	return len(s)
 }
 
 // fontH returns the text height used to vertically center labels: the face's line
@@ -479,6 +520,16 @@ func InputFromEbiten() Input {
 		End:          inpututil.IsKeyJustPressed(ebiten.KeyEnd),
 		Enter:        inpututil.IsKeyJustPressed(ebiten.KeyEnter),
 	}
+	// A finger drives the same pointer fields as the mouse; see touch.go.
+	var tx, ty int
+	touches := ebiten.AppendTouchIDs(nil)
+	active := len(touches) > 0
+	if active {
+		tx, ty = ebiten.TouchPosition(touches[0])
+	}
+	pressed := len(inpututil.AppendJustPressedTouchIDs(nil)) > 0
+	in = pointer.apply(in, float64(tx), float64(ty), active, pressed)
+
 	in.Chars = ebiten.AppendInputChars(nil)
 	_, wy := ebiten.Wheel()
 	in.WheelY = wy
