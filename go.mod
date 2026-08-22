@@ -1,6 +1,6 @@
 module github.com/crgimenes/minigui
 
-go 1.26.5
+go 1.27
 
 require (
 	github.com/crgimenes/native v0.1.5
