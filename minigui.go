@@ -107,6 +107,7 @@ const (
 	cmdBorder
 	cmdText
 	cmdCircle
+	cmdIcon
 )
 
 type drawCmd struct {
@@ -115,6 +116,7 @@ type drawCmd struct {
 	col        color.RGBA
 	s          string
 	clip       image.Rectangle // text only: clip the glyphs to this rect when set
+	icon       *Icon           // icon only; w is its side in pixels
 }
 
 // Context holds immediate-mode state that persists across frames (focus, caret)
@@ -275,16 +277,16 @@ func (c *Context) Label(s string) {
 
 // Button draws a clickable button and reports whether it was clicked this frame.
 func (c *Context) Button(id ID, label string) bool {
-	return c.button(label, c.style.Button, c.style.Border)
+	return c.buttonWith(nil, label, c.style.Button, c.style.Border)
 }
 
 // Toggle is a button that shows an active state, used for tools and on/off
 // options; it reports whether it was clicked this frame.
 func (c *Context) Toggle(id ID, label string, on bool) bool {
 	if on {
-		return c.button(label, c.style.ButtonOn, c.style.Focus)
+		return c.buttonWith(nil, label, c.style.ButtonOn, c.style.Focus)
 	}
-	return c.button(label, c.style.Button, c.style.Border)
+	return c.buttonWith(nil, label, c.style.Button, c.style.Border)
 }
 
 // swatchSize is the side of a color swatch in logical pixels.
@@ -311,12 +313,22 @@ func (c *Context) Swatch(id ID, col color.RGBA, selected bool) bool {
 	return clicked
 }
 
-// button draws a labelled box with the given fill and border, brightening on
-// hover, and reports a click. The label is centered; the width sizes to the text
-// unless a fixed item width is set (SetItemWidth). Shared core of Button/Toggle.
-func (c *Context) button(label string, fill, border color.RGBA) bool {
+// buttonWith draws a box with an optional icon and a label, the given fill and
+// border, brightening on hover, and reports a click. The content is centered;
+// the width sizes to it unless a fixed item width is set (SetItemWidth).
+// Shared core of the button and toggle widgets.
+func (c *Context) buttonWith(icon *Icon, label string, fill, border color.RGBA) bool {
 	textW := c.textWidth(label)
-	w := textW + 2*c.style.Pad
+	contentW := textW
+	px := 0
+	if icon != nil {
+		px = c.iconPx()
+		contentW = float64(px)
+		if label != "" {
+			contentW += c.style.Gap + textW
+		}
+	}
+	w := contentW + 2*c.style.Pad
 	if c.itemW > w {
 		w = c.itemW
 	}
@@ -327,7 +339,14 @@ func (c *Context) button(label string, fill, border color.RGBA) bool {
 	}
 	c.fill(c.x, c.y, w, h, fill)
 	c.border(c.x, c.y, w, h, border)
-	c.textAt(c.x+(w-textW)/2, c.y+(h-c.fontH())/2, label, c.style.Text)
+	x := c.x + (w-contentW)/2
+	if icon != nil {
+		c.icon(x, c.y+(h-float64(px))/2, icon, px, c.style.Text)
+		x += float64(px) + c.style.Gap
+	}
+	if label != "" {
+		c.textAt(x, c.y+(h-c.fontH())/2, label, c.style.Text)
+	}
 
 	clicked := hot && c.in.MouseClicked
 	c.advance(w, h)
@@ -347,6 +366,8 @@ func (c *Context) Render(dst *ebiten.Image) {
 			c.drawText(dst, cmd)
 		case cmdCircle:
 			vector.FillCircle(dst, float32(cmd.x), float32(cmd.y), float32(cmd.w), cmd.col, true)
+		case cmdIcon:
+			c.drawIcon(dst, cmd)
 		}
 	}
 }
