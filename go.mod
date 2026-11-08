@@ -4,7 +4,7 @@ go 1.27.1
 
 require (
 	github.com/crgimenes/native v0.1.18
-	github.com/hajimehoshi/ebiten/v2 v2.10.5
+	github.com/hajimehoshi/ebiten/v2 v2.10.6
 )
 
 require (
